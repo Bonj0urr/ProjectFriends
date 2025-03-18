@@ -1,0 +1,94 @@
+// Just a chill copyright notice
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Character.h"
+#include <EnhancedInputLibrary.h>
+#include "PFBaseCharacter.generated.h"
+
+class USpringArmComponent;
+class UCameraComponent;
+class UInputAction;
+class APFBaseItem;
+class UPFInventoryComponent;
+class UWidgetComponent;
+
+UCLASS()
+class PROJECTFRIENDS_API APFBaseCharacter : public ACharacter
+{
+	GENERATED_BODY()
+
+public:
+	APFBaseCharacter();
+
+	virtual void Tick(float DeltaTime) override;
+
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+    FORCEINLINE UPFInventoryComponent* GetInventoryComponent() { return InventoryComponent; };
+
+protected:
+	virtual void BeginPlay() override;
+
+    void Move(const FInputActionValue& Value);
+
+    void Look(const FInputActionValue& Value);
+
+    void CreateItem(const FInputActionValue& Value);
+
+    void Interact(const FInputActionValue& Value);
+
+    void UseItem(int32 ItemSlotNumber);
+
+    UFUNCTION(Server, Reliable)
+    void Server_CreateItem();
+
+    UFUNCTION(Server, Reliable)
+    void Server_Interact();
+
+    UFUNCTION(Server, Reliable)
+    void Server_UseItem(int32 ItemSlotNumber);
+
+private:
+    AActor* CreateInteractionTrace();
+
+protected:
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+    UPFInventoryComponent* InventoryComponent;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
+    TArray<TSoftClassPtr<APFBaseItem>> SpawnItemClasses;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
+    USpringArmComponent* CameraBoom;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
+    UCameraComponent* FollowCamera;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+    UWidgetComponent* InventoryWidgetComponent;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+    UInputAction* JumpAction;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+    UInputAction* MoveAction;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+    UInputAction* LookAction;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+    UInputAction* CreateItemAction;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+    UInputAction* InteractAction;
+
+    /** Insert UseItemActions in the correct order (UseItem1->UseItem2->UseItem3 etc.) */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+    TArray<UInputAction*> UseItemActions;
+
+private:
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
+    float InteractionTraceLength;
+};
