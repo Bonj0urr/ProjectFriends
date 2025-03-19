@@ -19,18 +19,26 @@ class PROJECTFRIENDS_API APFBaseItem : public AActor
 public:	
 	APFBaseItem();
 
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
     void HandleInteraction(APFBaseCharacter* const Character);
 
     FPrimaryAssetId GetItemDataPrimaryAssetId();
 
     FORCEINLINE UPFItemData* GetItemData() const { return ItemData; };
 
-    void DisableItem();
-
-    void EnableItem();
+    void SetIsItemEnabled(bool IsEnabled);
 
 protected:
 	virtual void BeginPlay() override;
+
+private:
+    UFUNCTION()
+    void OnRep_IsItemEnabledChanged();
+
+    void DisableItem();
+
+    void EnableItem();
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh", meta = (AllowPrivateAccess = "true"))
@@ -42,4 +50,7 @@ protected:
 private:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
     UPFItemData* ItemData;
+
+    UPROPERTY(ReplicatedUsing = OnRep_IsItemEnabledChanged)
+    bool bIsItemEnabled;
 };

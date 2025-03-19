@@ -1,12 +1,14 @@
 // Just a chill copyright notice
 
 #include "Items/PFBaseItem.h"
+#include "Net/UnrealNetwork.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Characters/PFBaseCharacter.h"
 #include "PFInventoryComponent.h"
 
 APFBaseItem::APFBaseItem()
+    : ItemData(nullptr), bIsItemEnabled(true)
 {
     bReplicates = true;
 	PrimaryActorTick.bCanEverTick = false;
@@ -24,34 +26,49 @@ APFBaseItem::APFBaseItem()
     SphereInteractionComponent->SetSphereRadius(SphereInteractionRadius);
 }
 
+void APFBaseItem::BeginPlay()
+{
+    Super::BeginPlay();
+}
+
+void APFBaseItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(APFBaseItem, bIsItemEnabled);
+}
+
+void APFBaseItem::SetIsItemEnabled(bool IsEnabled)
+{
+    checkf(HasAuthority(), TEXT("Should only run on server!"))
+
+    bIsItemEnabled = IsEnabled;
+    /* Manual update for server copy */
+    OnRep_IsItemEnabledChanged();
+}
+
+void APFBaseItem::OnRep_IsItemEnabledChanged()
+{
+    if (bIsItemEnabled)
+    {
+        EnableItem();
+    }
+    else
+    {
+        DisableItem();
+    }
+}
+
 void APFBaseItem::DisableItem()
 {
-    UPrimitiveComponent* const RootPrimitive = Cast<UPrimitiveComponent>(GetRootComponent());
-    if (RootPrimitive)
-    {
-        RootPrimitive->SetSimulatePhysics(false);
-        RootPrimitive->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-    }
-
+    SetActorEnableCollision(false);
     SetActorHiddenInGame(true);
 }
 
 void APFBaseItem::EnableItem()
 {
-    UPrimitiveComponent* const RootPrimitive = Cast<UPrimitiveComponent>(GetRootComponent());
-    if (RootPrimitive)
-    {
-        RootPrimitive->SetSimulatePhysics(true);
-        RootPrimitive->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-    }
-
+    SetActorEnableCollision(true);
     SetActorHiddenInGame(false);
-}
-
-void APFBaseItem::BeginPlay()
-{
-    Super::BeginPlay();
-
 }
 
 void APFBaseItem::HandleInteraction(APFBaseCharacter* const Character)

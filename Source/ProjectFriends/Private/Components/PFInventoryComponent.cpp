@@ -52,7 +52,7 @@ void UPFInventoryComponent::TryAddItem(APFBaseItem* const ItemToAdd)
     OnRep_InventoryItemsChanged();
 
     ItemToAdd->SetOwner(CharacterOwner);
-    ItemToAdd->DisableItem();
+    ItemToAdd->SetIsItemEnabled(false);
 }
 
 void UPFInventoryComponent::UseItem(int32 ItemSlotId)
