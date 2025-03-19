@@ -14,6 +14,7 @@
 #include "PFInventoryComponent.h"
 #include "Components/WidgetComponent.h"
 #include "UMGs/PFInventoryWidget.h"
+#include "Items/PFResourceLoader.h"
 
 APFBaseCharacter::APFBaseCharacter()
     : InteractionTraceLength(900.0f)
@@ -176,15 +177,34 @@ AActor* APFBaseCharacter::CreateInteractionTrace()
 
 void APFBaseCharacter::Server_CreateItem_Implementation()
 {
+    if (SpawnItemClasses.IsEmpty()) return;
+    
+    int32 SelectedItemClassIndex = FMath::RandRange(0, SpawnItemClasses.Num() - 1);
+
+    UClass* const SelectedItemClass = SpawnItemClasses[SelectedItemClassIndex].Get();
+    if (SelectedItemClass)
+    {
+        SpawnItem(SelectedItemClass);
+    }
+    else
+    {
+        /* Load selected item class async and spawn item from the loaded class */
+        const FSoftObjectPath& SoftItemClassPath = SpawnItemClasses[SelectedItemClassIndex].ToSoftObjectPath();
+
+        TSharedPtr<FStreamableHandle> LoadedItemClassHandle =
+            PFResourceLoader::RequestAsyncLoad(SoftItemClassPath, FStreamableDelegate::CreateUObject(this, &ThisClass::SpawnItemAfterLoad, SelectedItemClassIndex));
+
+        LoadedItemClassHandles.Add(LoadedItemClassHandle);
+    }
+}
+
+void APFBaseCharacter::SpawnItem(UClass* ItemClass)
+{
+    checkf(HasAuthority(), TEXT("Should only run on server!"))
+
     UWorld* const World = GetWorld();
     if (!World) return;
 
-    if (SpawnItemClasses.IsEmpty()) return;
-    
-    /* Spawn random item */
-    int32 RandomClassIndex = FMath::RandRange(0, SpawnItemClasses.Num() - 1);
-    UClass* const LoadedItemClass = SpawnItemClasses[RandomClassIndex].LoadSynchronous();
-    
     FTransform SpawnedItemTransform = GetActorTransform();
     float SpawnDistance = 150.0f;
     SpawnedItemTransform.SetLocation(GetActorLocation() + GetActorForwardVector() * SpawnDistance);
@@ -194,7 +214,15 @@ void APFBaseCharacter::Server_CreateItem_Implementation()
     SpawnParameters.Instigator = this;
     SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-    APFBaseItem* SpawnedItem = World->SpawnActor<APFBaseItem>(LoadedItemClass, SpawnedItemTransform, SpawnParameters);
+    APFBaseItem* const SpawnedItem = World->SpawnActor<APFBaseItem>(ItemClass, SpawnedItemTransform, SpawnParameters);
+}
+
+void APFBaseCharacter::SpawnItemAfterLoad(int32 ItemClassIndex)
+{
+    checkf(HasAuthority(), TEXT("Should only run on server!"))
+
+    UClass* const SelectedItemClass = SpawnItemClasses[ItemClassIndex].Get();
+    if (SelectedItemClass) SpawnItem(SelectedItemClass);
 }
 
 void APFBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

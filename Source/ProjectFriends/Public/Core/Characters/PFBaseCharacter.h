@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include <EnhancedInputLibrary.h>
+#include "Engine/StreamableManager.h" /* TO DO Remove it later after decoupling */
 #include "PFBaseCharacter.generated.h"
 
 class USpringArmComponent;
@@ -53,6 +54,13 @@ protected:
 private:
     AActor* CreateInteractionTrace();
 
+    /* Helper method to spawn items from the class that already exists in memory */
+    void SpawnItem(UClass* ItemClass);
+
+    /* Helper method to spawn items from class that has been loaded by resource loader for the first time */
+    UFUNCTION()
+    void SpawnItemAfterLoad(int32 ItemClassIndex);
+
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
     UPFInventoryComponent* InventoryComponent;
@@ -91,4 +99,7 @@ protected:
 private:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
     float InteractionTraceLength;
+
+    /* TO DO decouple the storage of this handles from the character */
+    TArray<TSharedPtr<FStreamableHandle>> LoadedItemClassHandles;
 };
