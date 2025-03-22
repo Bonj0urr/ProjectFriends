@@ -14,6 +14,7 @@ class UInputAction;
 class APFBaseItem;
 class UPFInventoryComponent;
 class UWidgetComponent;
+class USceneComponent;
 
 UCLASS()
 class PROJECTFRIENDS_API APFBaseCharacter : public ACharacter
@@ -27,7 +28,9 @@ public:
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-    FORCEINLINE UPFInventoryComponent* GetInventoryComponent() { return InventoryComponent; };
+    FORCEINLINE UPFInventoryComponent* GetInventoryComponent() const { return InventoryComponent; };
+
+    FORCEINLINE USceneComponent* GetHeldItemSceneComponent() const { return HeldItemSceneComponent; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -40,7 +43,7 @@ protected:
 
     void Interact(const FInputActionValue& Value);
 
-    void UseItem(int32 ItemSlotNumber);
+    void EquipItem(int32 ItemSlotNumber);
 
     UFUNCTION(Server, Reliable)
     void Server_CreateItem();
@@ -49,7 +52,7 @@ protected:
     void Server_Interact();
 
     UFUNCTION(Server, Reliable)
-    void Server_UseItem(int32 ItemSlotNumber);
+    void Server_EquipItem(int32 ItemSlotNumber);
 
 private:
     AActor* CreateInteractionTrace();
@@ -77,6 +80,9 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
     UWidgetComponent* InventoryWidgetComponent;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+    USceneComponent* HeldItemSceneComponent;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
     UInputAction* JumpAction;
 
@@ -92,9 +98,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
     UInputAction* InteractAction;
 
-    /** Insert UseItemActions in the correct order (UseItem1->UseItem2->UseItem3 etc.) */
+    /** Insert EquipItemActions in the correct order (EquipItem1->EquipItem2->EquipItem3 etc.) */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
-    TArray<UInputAction*> UseItemActions;
+    TArray<UInputAction*> EquipItemActions;
 
 private:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))

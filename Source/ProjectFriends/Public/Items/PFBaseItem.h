@@ -29,6 +29,8 @@ public:
 
     void SetIsItemEnabled(bool IsEnabled);
 
+    FORCEINLINE bool GetIsItemEnabled() const { return bIsItemEnabled; };
+
 protected:
 	virtual void BeginPlay() override;
 

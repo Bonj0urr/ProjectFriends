@@ -55,8 +55,54 @@ void UPFInventoryComponent::TryAddItem(APFBaseItem* const ItemToAdd)
     ItemToAdd->SetIsItemEnabled(false);
 }
 
-void UPFInventoryComponent::UseItem(int32 ItemSlotId)
+void UPFInventoryComponent::EquipItem(int32 ItemSlotId)
 {
+    APFBaseCharacter* const CharacterOwner = Cast<APFBaseCharacter>(GetOwner());
+    if (!CharacterOwner) return;
 
+    checkf(CharacterOwner->HasAuthority(), TEXT("Should only run on server!"))
+
+    if (!InventoryItems.IsValidIndex(ItemSlotId)) return;
+
+    if (!InventoryItems[ItemSlotId].ItemDataId.IsValid()) return;
+
+    APFBaseItem* const SelectedInventoryItem = InventoryItems[ItemSlotId].CachedItem;
+    if (!SelectedInventoryItem) return;
+
+    /* If SelectedInventoryItem is already in hands, disable and detach it */
+    if (SelectedInventoryItem->GetIsItemEnabled())
+    {
+        DisableAndDetachItem(SelectedInventoryItem);
+        return;
+    }
+
+    /* Disable and detach any item that is currently in hands */
+    for (const FPFInventoryItem& Item : InventoryItems)
+    {
+        if (!Item.ItemDataId.IsValid()) continue;
+
+        if (Item.CachedItem == SelectedInventoryItem) continue;
+
+        if (Item.CachedItem->GetIsItemEnabled())
+        {
+            DisableAndDetachItem(Item.CachedItem);
+        }
+    }
+
+    USceneComponent* const HeldItemSceneComponent = CharacterOwner->GetHeldItemSceneComponent();
+    if (!HeldItemSceneComponent) return;
+
+    FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
+    SelectedInventoryItem->AttachToComponent(HeldItemSceneComponent, AttachmentRules);
+    SelectedInventoryItem->SetIsItemEnabled(true);
+}
+
+void UPFInventoryComponent::DisableAndDetachItem(APFBaseItem* Item)
+{
+    if (!Item) return;
+
+    FDetachmentTransformRules DetachmentRules(EDetachmentRule::KeepWorld, EDetachmentRule::KeepWorld, EDetachmentRule::KeepWorld, false);
+    Item->DetachFromActor(DetachmentRules);
+    Item->SetIsItemEnabled(false);
 }
 

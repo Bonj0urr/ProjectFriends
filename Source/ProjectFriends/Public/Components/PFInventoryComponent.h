@@ -40,7 +40,8 @@ public:
 
     FORCEINLINE int32 GetInventorySize() const { return InventorySize; }
 
-    void UseItem(int32 ItemSlotId);
+    /* Either equips the selected item, or unequips it if it is already equipped */
+    void EquipItem(int32 ItemSlotId);
 
 protected:
 	virtual void BeginPlay() override;
@@ -48,6 +49,8 @@ protected:
 private:
     UFUNCTION()
     void OnRep_InventoryItemsChanged();
+
+    void DisableAndDetachItem(APFBaseItem* Item);
 
 public:
     FOnInventoryItemsChangedSignature OnInventoryItemsChanged;

@@ -6,6 +6,7 @@
 #include "InputActionValue.h"
 #include "Engine/LocalPlayer.h"
 #include "Camera/CameraComponent.h"
+#include "Components/SceneComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -46,6 +47,9 @@ APFBaseCharacter::APFBaseCharacter()
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     FollowCamera->bUsePawnControlRotation = false;
+
+    HeldItemSceneComponent = CreateDefaultSubobject<USceneComponent>("HeldItemSceneComponent");
+    HeldItemSceneComponent->SetupAttachment(RootComponent);
 
     InventoryWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("InventoryWidgetComponent"));
     InventoryWidgetComponent->SetupAttachment(RootComponent);
@@ -116,7 +120,7 @@ void APFBaseCharacter::Interact(const FInputActionValue& Value)
     Server_Interact();
 }
 
-void APFBaseCharacter::UseItem(int32 ItemSlotNumber)
+void APFBaseCharacter::EquipItem(int32 ItemSlotNumber)
 {
     if (!IsValid(InventoryComponent)) return;
 
@@ -126,7 +130,7 @@ void APFBaseCharacter::UseItem(int32 ItemSlotNumber)
 
     if (!InventoryItems[ItemSlotNumber].ItemDataId.IsValid()) return;
 
-    Server_UseItem(ItemSlotNumber);
+    Server_EquipItem(ItemSlotNumber);
 }
 
 void APFBaseCharacter::Server_Interact_Implementation()
@@ -140,10 +144,11 @@ void APFBaseCharacter::Server_Interact_Implementation()
     HitItem->HandleInteraction(this);
 }
 
-void APFBaseCharacter::Server_UseItem_Implementation(int32 ItemSlotNumber)
+void APFBaseCharacter::Server_EquipItem_Implementation(int32 ItemSlotNumber)
 {
     if (!IsValid(InventoryComponent)) return;
 
+    InventoryComponent->EquipItem(ItemSlotNumber);
 }
 
 AActor* APFBaseCharacter::CreateInteractionTrace()
@@ -202,6 +207,8 @@ void APFBaseCharacter::SpawnItem(UClass* ItemClass)
 {
     checkf(HasAuthority(), TEXT("Should only run on server!"))
 
+    if (!IsValid(ItemClass)) return;
+
     UWorld* const World = GetWorld();
     if (!World) return;
 
@@ -245,11 +252,11 @@ void APFBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
     if (!IsValid(InventoryComponent)) return;
     
-    checkf(InventoryComponent->GetInventorySize() == UseItemActions.Num(), TEXT("InventorySize should be equal to UseItemActions amount!"))
+    checkf(InventoryComponent->GetInventorySize() == EquipItemActions.Num(), TEXT("InventorySize should be equal to EquipItemActions amount!"))
 
-    for (int32 i = 0; i < UseItemActions.Num(); i++)
+    for (int32 i = 0; i < EquipItemActions.Num(); i++)
     {
-        EnhancedInputComponent->BindAction(UseItemActions[i], ETriggerEvent::Started, this, &APFBaseCharacter::UseItem, i);
+        EnhancedInputComponent->BindAction(EquipItemActions[i], ETriggerEvent::Started, this, &APFBaseCharacter::EquipItem, i);
     }
 }
 
