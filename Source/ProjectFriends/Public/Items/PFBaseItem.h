@@ -23,9 +23,9 @@ public:
 
     void HandleInteraction(APFBaseCharacter* const Character);
 
-    FPrimaryAssetId GetItemDataPrimaryAssetId();
+    FORCEINLINE FPrimaryAssetId GetItemDataPrimaryAssetId() const { return ItemDataPrimaryAssetId; }
 
-    FORCEINLINE UPFItemData* GetItemData() const { return ItemData; };
+    //FORCEINLINE UPFItemData* GetItemData() const { return ItemData; };
 
     void SetIsItemEnabled(bool IsEnabled);
 
@@ -51,7 +51,7 @@ protected:
 
 private:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
-    UPFItemData* ItemData;
+    FPrimaryAssetId ItemDataPrimaryAssetId;
 
     UPROPERTY(ReplicatedUsing = OnRep_IsItemEnabledChanged)
     bool bIsItemEnabled;

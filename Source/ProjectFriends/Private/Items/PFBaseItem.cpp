@@ -8,7 +8,7 @@
 #include "PFInventoryComponent.h"
 
 APFBaseItem::APFBaseItem()
-    : ItemData(nullptr), bIsItemEnabled(true)
+    : bIsItemEnabled(true)
 {
     bReplicates = true;
 	PrimaryActorTick.bCanEverTick = false;
@@ -82,11 +82,3 @@ void APFBaseItem::HandleInteraction(APFBaseCharacter* const Character)
 
     InventoryComponent->TryAddItem(this);
 }
-
-FPrimaryAssetId APFBaseItem::GetItemDataPrimaryAssetId()
-{
-    if (!IsValid(ItemData)) return FPrimaryAssetId();
-
-    return ItemData->GetPrimaryAssetId();
-}
-

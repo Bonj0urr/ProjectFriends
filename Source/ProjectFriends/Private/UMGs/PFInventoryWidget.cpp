@@ -24,9 +24,15 @@ void UPFInventoryWidget::UpdateInventoryItems(TArray<FPFInventoryItem> NewInvent
 
     for (int32 i = 0; i < NewInventoryItems.Num(); i++)
     {
+        if (AssetManager->GetPrimaryAssetObject(NewInventoryItems[i].ItemDataId))
+        {
+            UpdateInventoryItemImage(NewInventoryItems[i].ItemDataId, InventoryItemImages[i]);
+            continue;
+        }
+
         FStreamableDelegate Delegate = FStreamableDelegate::CreateUObject(this, &UPFInventoryWidget::UpdateInventoryItemImage, 
             NewInventoryItems[i].ItemDataId, InventoryItemImages[i]);
-
+        
         AssetManager->LoadPrimaryAsset(NewInventoryItems[i].ItemDataId, Bundles, Delegate);
     }
 }
