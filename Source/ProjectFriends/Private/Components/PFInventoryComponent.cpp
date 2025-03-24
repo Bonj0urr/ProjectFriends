@@ -7,7 +7,7 @@
 #include "Characters/PFBaseCharacter.h"
 
 UPFInventoryComponent::UPFInventoryComponent()
-    : InventorySize(3)
+    : InventorySize(3), ReadyToUseId(-1)
 {
 	PrimaryComponentTick.bCanEverTick = false;
     SetIsReplicatedByDefault(true);
@@ -18,6 +18,10 @@ void UPFInventoryComponent::BeginPlay()
 	Super::BeginPlay();
 
     InventoryItems.Reserve(InventorySize);
+    for (int32 i = 0; i < InventorySize; i++)
+    {
+        InventoryItems.AddDefaulted();
+    }
 }
 
 void UPFInventoryComponent::OnRep_InventoryItemsChanged()
@@ -30,6 +34,9 @@ void UPFInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
     DOREPLIFETIME(UPFInventoryComponent, InventoryItems);
+
+    /* TO DO add COND_*/
+    DOREPLIFETIME(UPFInventoryComponent, ReadyToUseId);
 }
 
 void UPFInventoryComponent::TryAddItem(APFBaseItem* const ItemToAdd)
@@ -41,13 +48,27 @@ void UPFInventoryComponent::TryAddItem(APFBaseItem* const ItemToAdd)
 
     if (!ItemToAdd) return;
 
-    if (InventoryItems.Num() >= InventorySize) return;
+    /* Select Item slot id where we should try to add a new item */
+    int32 SlotIdToAdd = -1;
 
+    for (int32 i = 0; i < InventorySize; i++)
+    {
+        if (!InventoryItems[i].IsValid())
+        {
+            SlotIdToAdd = i;
+            break;
+        }
+    }
+
+    if (SlotIdToAdd == -1 ) return;
+
+    /* Add an item to the inventory */
     FPFInventoryItem NewInventoryItem;
     NewInventoryItem.ItemDataId = ItemToAdd->GetItemDataPrimaryAssetId();
     NewInventoryItem.CachedItem = ItemToAdd;
 
-    InventoryItems.Add(NewInventoryItem);
+    InventoryItems[SlotIdToAdd] = NewInventoryItem;
+
     /* Manual update for server copy */
     OnRep_InventoryItemsChanged();
 
@@ -73,10 +94,11 @@ void UPFInventoryComponent::EquipItem(int32 ItemSlotId)
     if (SelectedInventoryItem->GetIsItemEnabled())
     {
         DisableAndDetachItem(SelectedInventoryItem);
+        ReadyToUseId = -1;
         return;
     }
 
-    /* Disable and detach any item that is currently in hands */
+    /* Disable and detach any item that is currently in hands, then equip new item */
     for (const FPFInventoryItem& Item : InventoryItems)
     {
         if (!Item.ItemDataId.IsValid()) continue;
@@ -95,6 +117,31 @@ void UPFInventoryComponent::EquipItem(int32 ItemSlotId)
     FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
     SelectedInventoryItem->AttachToComponent(HeldItemSceneComponent, AttachmentRules);
     SelectedInventoryItem->SetIsItemEnabled(true);
+    ReadyToUseId = ItemSlotId;
+}
+
+void UPFInventoryComponent::UseReadyToUseItem()
+{
+    APFBaseCharacter* const CharacterOwner = Cast<APFBaseCharacter>(GetOwner());
+    if (!CharacterOwner) return;
+
+    checkf(CharacterOwner->HasAuthority(), TEXT("Should only run on server!"))
+
+    if (!IsReadyToUseIdValid()) return;
+
+    if (!InventoryItems.IsValidIndex(ReadyToUseId)) return;
+
+    if (!InventoryItems[ReadyToUseId].ItemDataId.IsValid()) return;
+
+    APFBaseItem* const ReadyToUseItem = InventoryItems[ReadyToUseId].CachedItem;
+    if (!ReadyToUseItem) return;
+
+    ReadyToUseItem->UseItem();
+
+    InvalidateInventorySlot(ReadyToUseId);
+    /* Manual update for server copy */
+    OnRep_InventoryItemsChanged();
+    ReadyToUseId = -1;
 }
 
 void UPFInventoryComponent::DisableAndDetachItem(APFBaseItem* Item)
@@ -104,5 +151,10 @@ void UPFInventoryComponent::DisableAndDetachItem(APFBaseItem* Item)
     FDetachmentTransformRules DetachmentRules(EDetachmentRule::KeepWorld, EDetachmentRule::KeepWorld, EDetachmentRule::KeepWorld, false);
     Item->DetachFromActor(DetachmentRules);
     Item->SetIsItemEnabled(false);
+}
+
+void UPFInventoryComponent::InvalidateInventorySlot(int32 SlotId)
+{
+    InventoryItems[SlotId] = FPFInventoryItem();
 }
 

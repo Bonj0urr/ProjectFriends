@@ -16,6 +16,7 @@ struct FPFInventoryItem
     GENERATED_BODY()
 
     FPFInventoryItem() : ItemDataId(FPrimaryAssetId(NAME_None, NAME_None)) , CachedItem(nullptr) {}
+    FPFInventoryItem(FPrimaryAssetId InItemDataId, APFBaseItem* InItem) : ItemDataId(InItemDataId) , CachedItem(InItem) {}
 
     UPROPERTY()
     FPrimaryAssetId ItemDataId;
