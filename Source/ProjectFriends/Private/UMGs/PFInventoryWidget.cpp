@@ -17,6 +17,7 @@ void UPFInventoryWidget::NativeConstruct()
 
 void UPFInventoryWidget::UpdateInventoryItems(TArray<FPFInventoryItem> NewInventoryItems)
 {
+    /* TO DO later move this to PFResourceLoader */
     UAssetManager* const AssetManager = UAssetManager::GetIfInitialized();
     if (!IsValid(AssetManager)) return;
 
@@ -24,6 +25,12 @@ void UPFInventoryWidget::UpdateInventoryItems(TArray<FPFInventoryItem> NewInvent
 
     for (int32 i = 0; i < NewInventoryItems.Num(); i++)
     {
+        if (!NewInventoryItems[i].IsValid())
+        {
+            UpdateInventoryItemImage(NewInventoryItems[i].ItemDataId, InventoryItemImages[i]);
+            continue;
+        }
+
         if (AssetManager->GetPrimaryAssetObject(NewInventoryItems[i].ItemDataId))
         {
             UpdateInventoryItemImage(NewInventoryItems[i].ItemDataId, InventoryItemImages[i]);
@@ -39,20 +46,26 @@ void UPFInventoryWidget::UpdateInventoryItems(TArray<FPFInventoryItem> NewInvent
 
 void UPFInventoryWidget::UpdateInventoryItemImage(FPrimaryAssetId LoadedId, UImage* InventoryItemImage)
 {
+    if (!IsValid(InventoryItemImage)) return;
+
+    /* TO DO later move this to PFResourceLoader */
     UAssetManager* const AssetManager = UAssetManager::GetIfInitialized();
     if (!IsValid(AssetManager)) return;
 
     UPFItemData* const ItemData = Cast<UPFItemData>(AssetManager->GetPrimaryAssetObject(LoadedId));
-    if (!IsValid(ItemData)) return;
+    if (IsValid(ItemData))
+    {
+        InventoryItemImage->SetBrushFromTexture(ItemData->Icon, false);
 
-    if (!IsValid(InventoryItemImage)) return;
+        FVector2D NewBrushSize;
+        NewBrushSize.X = ItemData->Icon->GetSizeX();
+        NewBrushSize.Y = ItemData->Icon->GetSizeY();
 
-    InventoryItemImage->SetBrushFromTexture(ItemData->Icon, false);
-
-    FVector2D NewBrushSize;
-    NewBrushSize.X = ItemData->Icon->GetSizeX();
-    NewBrushSize.Y = ItemData->Icon->GetSizeY();
-
-    InventoryItemImage->SetDesiredSizeOverride(NewBrushSize);
+        InventoryItemImage->SetDesiredSizeOverride(NewBrushSize);
+    }
+    else
+    {
+        InventoryItemImage->SetBrushFromTexture(nullptr, false);
+    }
 }
 

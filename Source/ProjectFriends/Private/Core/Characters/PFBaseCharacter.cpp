@@ -133,6 +133,17 @@ void APFBaseCharacter::EquipItem(int32 ItemSlotNumber)
     Server_EquipItem(ItemSlotNumber);
 }
 
+void APFBaseCharacter::Use(const FInputActionValue& Value)
+{
+    if (!Value.Get<bool>()) return;
+
+    if (!IsValid(InventoryComponent)) return;
+
+    if (!InventoryComponent->IsReadyToUseIdValid()) return;
+
+    Server_Use();
+}
+
 void APFBaseCharacter::Server_Interact_Implementation()
 {
     AActor* const HitActor = CreateInteractionTrace();
@@ -149,6 +160,13 @@ void APFBaseCharacter::Server_EquipItem_Implementation(int32 ItemSlotNumber)
     if (!IsValid(InventoryComponent)) return;
 
     InventoryComponent->EquipItem(ItemSlotNumber);
+}
+
+void APFBaseCharacter::Server_Use_Implementation()
+{
+    if (!IsValid(InventoryComponent)) return;
+
+    InventoryComponent->UseReadyToUseItem();
 }
 
 AActor* APFBaseCharacter::CreateInteractionTrace()
@@ -249,6 +267,8 @@ void APFBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
     EnhancedInputComponent->BindAction(CreateItemAction, ETriggerEvent::Started, this, &APFBaseCharacter::CreateItem);
 
     EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &APFBaseCharacter::Interact);
+
+    EnhancedInputComponent->BindAction(UseAction, ETriggerEvent::Started, this, &APFBaseCharacter::Use);
 
     if (!IsValid(InventoryComponent)) return;
     

@@ -22,6 +22,8 @@ struct FPFInventoryItem
 
     UPROPERTY(NotReplicated)
     APFBaseItem* CachedItem;
+
+    FORCEINLINE bool IsValid() const { return ItemDataId.IsValid(); }
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -40,8 +42,13 @@ public:
 
     FORCEINLINE int32 GetInventorySize() const { return InventorySize; }
 
+    /* Checks if there is an item that is currently held and can be used */
+    FORCEINLINE bool IsReadyToUseIdValid() const { return ReadyToUseId != -1; }
+
     /* Either equips the selected item, or unequips it if it is already equipped */
     void EquipItem(int32 ItemSlotId);
+
+    void UseReadyToUseItem();
 
 protected:
 	virtual void BeginPlay() override;
@@ -52,6 +59,8 @@ private:
 
     void DisableAndDetachItem(APFBaseItem* Item);
 
+    void InvalidateInventorySlot(int32 SlotId);
+
 public:
     FOnInventoryItemsChangedSignature OnInventoryItemsChanged;
 
@@ -61,5 +70,8 @@ private:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
     int32 InventorySize;
-		
+	
+    /* The inventory id of an item that is currently held and can be used, -1 if not valid */
+    UPROPERTY(Replicated)
+    int32 ReadyToUseId;
 };

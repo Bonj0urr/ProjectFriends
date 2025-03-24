@@ -45,6 +45,8 @@ protected:
 
     void EquipItem(int32 ItemSlotNumber);
 
+    void Use(const FInputActionValue& Value);
+
     UFUNCTION(Server, Reliable)
     void Server_CreateItem();
 
@@ -53,6 +55,9 @@ protected:
 
     UFUNCTION(Server, Reliable)
     void Server_EquipItem(int32 ItemSlotNumber);
+
+    UFUNCTION(Server, Reliable)
+    void Server_Use();
 
 private:
     AActor* CreateInteractionTrace();
@@ -97,6 +102,9 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
     UInputAction* InteractAction;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+    UInputAction* UseAction;
 
     /** Insert EquipItemActions in the correct order (EquipItem1->EquipItem2->EquipItem3 etc.) */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
