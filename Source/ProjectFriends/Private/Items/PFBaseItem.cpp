@@ -13,6 +13,7 @@ APFBaseItem::APFBaseItem()
     bReplicates = true;
 	PrimaryActorTick.bCanEverTick = false;
     SetReplicateMovement(false);
+    SetPhysicsReplicationMode(EPhysicsReplicationMode::PredictiveInterpolation);
 
     StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
     StaticMeshComponent->SetupAttachment(RootComponent);
