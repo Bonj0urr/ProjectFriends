@@ -74,6 +74,7 @@ void UPFInventoryComponent::TryAddItem(APFBaseItem* const ItemToAdd)
 
     ItemToAdd->SetOwner(CharacterOwner);
     ItemToAdd->SetIsItemEnabled(false);
+    ItemToAdd->SetIsItemPhysicsSimulated(false);
 }
 
 void UPFInventoryComponent::EquipItem(int32 ItemSlotId)

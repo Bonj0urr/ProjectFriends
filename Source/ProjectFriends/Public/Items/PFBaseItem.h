@@ -25,11 +25,13 @@ public:
 
     FORCEINLINE FPrimaryAssetId GetItemDataPrimaryAssetId() const { return ItemDataPrimaryAssetId; }
 
-    //FORCEINLINE UPFItemData* GetItemData() const { return ItemData; };
-
     void SetIsItemEnabled(bool IsEnabled);
 
+    void SetIsItemPhysicsSimulated(bool IsSimulated);
+
     FORCEINLINE bool GetIsItemEnabled() const { return bIsItemEnabled; };
+
+    virtual void UseItem();
 
 protected:
 	virtual void BeginPlay() override;
@@ -37,6 +39,9 @@ protected:
 private:
     UFUNCTION()
     void OnRep_IsItemEnabledChanged();
+
+    UFUNCTION()
+    void OnRep_IsItemPhysicsSimulatedChanged();
 
     void DisableItem();
 
@@ -55,4 +60,7 @@ private:
 
     UPROPERTY(ReplicatedUsing = OnRep_IsItemEnabledChanged)
     bool bIsItemEnabled;
+
+    UPROPERTY(ReplicatedUsing = OnRep_IsItemPhysicsSimulatedChanged)
+    bool bIsItemPhysicsSimulated;
 };
